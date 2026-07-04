@@ -66,6 +66,7 @@ function initUI() {
     }
 
     window.addEventListener('keydown', (e) => {
+        if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
         const k = e.key.toLowerCase();
         if (k === ' ' || k === 'spacebar') keys.space = true;
         if (k === 'w' || e.key === 'ArrowUp') keys.w = true;
@@ -77,6 +78,7 @@ function initUI() {
     });
 
     window.addEventListener('keyup', (e) => {
+        if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
         const k = e.key.toLowerCase();
         if (k === ' ' || k === 'spacebar') keys.space = false;
         if (k === 'w' || e.key === 'ArrowUp') keys.w = false;
@@ -106,6 +108,7 @@ function initUI() {
     setupJuiceJobEvents();
     document.getElementById('quit-crypto-btn').addEventListener('click', () => quitJob());
     init3D();
+    initAIAssistant();
 }
 
 function updateCashHUD() {
@@ -1109,3 +1112,195 @@ function updateVFX(delta) {
 // Check loader
 if (document.readyState === 'complete' || document.readyState === 'interactive') initUI();
 else document.addEventListener('DOMContentLoaded', initUI);
+
+// AI Assistant Logic (Calling DeepSeek API)
+let aiChatHistory = [];
+
+function initAIAssistant() {
+    const toggleBtn = document.getElementById('ai-toggle-btn');
+    const chatPanel = document.getElementById('ai-chat-panel');
+    const closeBtn = document.getElementById('ai-close-btn');
+    const settingsBtn = document.getElementById('ai-settings-btn');
+    const keyPanel = document.getElementById('ai-key-panel');
+    const closeKeyBtn = document.getElementById('ai-close-key-btn');
+    const saveKeyBtn = document.getElementById('ai-save-key-btn');
+    const keyInput = document.getElementById('ai-api-key-input');
+    const sendBtn = document.getElementById('ai-send-btn');
+    const chatInput = document.getElementById('ai-chat-input');
+    const chatBody = document.getElementById('ai-chat-body');
+
+    if (!toggleBtn || !chatPanel) return;
+
+    // Load saved API Key
+    const savedKey = localStorage.getItem('deepseek_api_key');
+    if (savedKey) keyInput.value = savedKey;
+
+    // Toggle Chat Panel
+    toggleBtn.addEventListener('click', () => {
+        chatPanel.classList.toggle('hidden');
+        if (!chatPanel.classList.contains('hidden')) {
+            chatInput.focus();
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+    });
+
+    // Close Chat
+    closeBtn.addEventListener('click', () => chatPanel.classList.add('hidden'));
+
+    // Toggle Settings Panel
+    settingsBtn.addEventListener('click', () => keyPanel.classList.toggle('hidden'));
+    closeKeyBtn.addEventListener('click', () => keyPanel.classList.add('hidden'));
+
+    // Save Key
+    saveKeyBtn.addEventListener('click', () => {
+        const key = keyInput.value.trim();
+        if (key) {
+            localStorage.setItem('deepseek_api_key', key);
+            appendAIMessage("✅ API Key 已安全保存在本地浏览器！");
+        } else {
+            localStorage.removeItem('deepseek_api_key');
+            appendAIMessage("ℹ️ API Key 已被清除。");
+        }
+        keyPanel.classList.add('hidden');
+    });
+
+    // Send Message on click
+    sendBtn.addEventListener('click', () => handleUserSendMessage());
+
+    // Send Message on Enter key
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleUserSendMessage();
+    });
+}
+
+function appendUserMessage(text) {
+    const chatBody = document.getElementById('ai-chat-body');
+    const msg = document.createElement('div');
+    msg.className = 'ai-msg user';
+    msg.innerHTML = `<div class="ai-bubble">${escapeHtml(text)}</div>`;
+    chatBody.appendChild(msg);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function appendAIMessage(text) {
+    const chatBody = document.getElementById('ai-chat-body');
+    const msg = document.createElement('div');
+    msg.className = 'ai-msg ai';
+    msg.innerHTML = `<div class="ai-bubble">${text}</div>`; // Allow safe HTML here (like checkmarks, bold, etc.)
+    chatBody.appendChild(msg);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function appendLoadingMessage() {
+    const chatBody = document.getElementById('ai-chat-body');
+    const msg = document.createElement('div');
+    msg.className = 'ai-msg ai';
+    msg.id = 'ai-msg-loading';
+    msg.innerHTML = `<div class="ai-bubble"><i class="fa-solid fa-ellipsis animate-pulse"></i> 正在连线脑机接口...</div>`;
+    chatBody.appendChild(msg);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function removeLoadingMessage() {
+    const loader = document.getElementById('ai-msg-loading');
+    if (loader) loader.remove();
+}
+
+function escapeHtml(unsafe) {
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
+
+async function handleUserSendMessage() {
+    const chatInput = document.getElementById('ai-chat-input');
+    const text = chatInput.value.trim();
+    if (!text) return;
+
+    appendUserMessage(text);
+    chatInput.value = '';
+
+    const apiKey = localStorage.getItem('deepseek_api_key');
+    if (!apiKey) {
+        appendAIMessage("⚠️ 请先点击右上角设置图标（⚙️齿轮）配置您的 **DeepSeek API Key** 后才能开始聊天！<br><small>我们使用浏览器直连方式，保证您的密钥安全。</small>");
+        return;
+    }
+
+    appendLoadingMessage();
+
+    // Limit conversation history length to keep payload lightweight
+    if (aiChatHistory.length > 12) {
+        aiChatHistory.shift();
+        aiChatHistory.shift();
+    }
+
+    const systemPrompt = "你是一位幽默而称职的导游，身处在操逼乐园（Funfair 3D Explorer）。你的说话风格符合乐园的暗示性/性暗示/NSFW恶搞主题（可以带有幽默诙谐的双关，但保持作为AI助手的礼貌和实用性）。你必须告诉游客以下乐园项目规则和玩法：\n" +
+                         "1. 控制方式：WASD移动，空格跳跃，鼠标拖拽/锁定视角，E交互（进入游乐项目、打工、在门口买票）。过山车时按V切换视角。\n" +
+                         "2. 大门票：门票售价为 $100。游客初始只有 $50，必须通过打工赚钱才可购票进入。\n" +
+                         "3. 三大打工项目：\n" +
+                         "   - 白色乳液夹心汉堡制作：在左侧汉堡店，拉动棕色橡胶棒往复摩擦，满 5 次喷射白色胶体可赚 $50。\n" +
+                         "   - 香肠果汁制作：在右侧果汁店，把案板上的棕色橡胶棒丢入杯子并加满水，做 10 次赚 $80。\n" +
+                         "   - 二楼好想来炒币：在左侧二楼炒币办公室，等待 20 秒倒计时，体验 100x 杠杆炒币开多空暴仓日志，结束后大赚 $300。\n" +
+                         "4. 八大游乐设施（游玩每项需 $20，门票购买后可用）：\n" +
+                         "   - 操逼过山车：体验胶囊后双球的列车极速滑行。\n" +
+                         "   - 操逼跳楼机：从底部双球上升，高空震颤并重力坠落，摩擦火花。\n" +
+                         "   - 霓虹摩天轮：高空宽屏观景视角。\n" +
+                         "   - 寄吧大摆锤：大转盘正中带圆头凸起的极速回旋。\n" +
+                         "   - 吵币水上摩托：水池自由漂移。\n" +
+                         "   - 机霸铠甲弹射装置：高空高强度反弹跳跃。\n" +
+                         "   - 超碧大转盘：倾斜主轴的剧烈摇晃。\n" +
+                         "   - 大屁飞车：开着带有圆润性感双臀尾部的碰碰车激情冲撞。\n" +
+                         "5. 传送门：可以在右下角点击快捷传送（传送需要花费 $20 并已买票）。\n" +
+                         "请根据以上设定回答，保持字数简练，适合在小悬浮卡片中阅读。不要说任何敏感政治话题，只谈乐园和操作。";
+
+    const payload = {
+        model: "deepseek-chat",
+        messages: [
+            { role: "system", content: systemPrompt },
+            ...aiChatHistory,
+            { role: "user", content: text }
+        ],
+        temperature: 0.7
+    };
+
+    try {
+        const response = await fetch("https://api.deepseek.com/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        removeLoadingMessage();
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            const errMsg = errData.error ? errData.error.message : response.statusText;
+            appendAIMessage(`❌ 连线失败：${errMsg || 'API连接异常'}。请检查您的 API Key 是否正确输入，且账户余额充足。`);
+            return;
+        }
+
+        const data = await response.json();
+        const reply = data.choices[0].message.content.trim();
+        
+        // Save history
+        aiChatHistory.push({ role: "user", content: text });
+        aiChatHistory.push({ role: "assistant", content: reply });
+
+        // Simple markdown parsing to HTML
+        let formattedReply = reply
+            .replace(/\n/g, "<br>")
+            .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
+        
+        appendAIMessage(formattedReply);
+
+    } catch (e) {
+        removeLoadingMessage();
+        appendAIMessage(`❌ 网络连接超时或异常：${e.message}。请确保您的浏览器可以正常访问 DeepSeek 服务接口。`);
+    }
+}
