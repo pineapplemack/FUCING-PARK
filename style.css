@@ -785,3 +785,214 @@ body, html {
         display: none;
     }
 }
+
+/* AI Assistant Widget CSS */
+#ai-assistant-widget {
+    position: absolute;
+    bottom: 20px;
+    right: 80px; /* Offset from audio control */
+    z-index: 999;
+}
+
+#ai-toggle-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 20px;
+    color: #ffffff;
+    border: 1px solid rgba(255, 0, 128, 0.4);
+    box-shadow: 0 0 15px rgba(255, 0, 128, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#ai-toggle-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 25px rgba(255, 0, 128, 0.6);
+}
+
+#ai-chat-panel {
+    position: absolute;
+    bottom: 60px;
+    right: 0;
+    width: 320px;
+    height: 420px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: ai-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ai-slide-up {
+    from { transform: translateY(15px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.ai-chat-header {
+    padding: 12px;
+    background: rgba(255, 0, 128, 0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.ai-header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.ai-chat-header button {
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 16px;
+    transition: color 0.2s;
+}
+
+.ai-chat-header button:hover {
+    color: #fff;
+}
+
+.ai-chat-body {
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(5, 5, 10, 0.3);
+}
+
+/* Scrollbar styling */
+.ai-chat-body::-webkit-scrollbar {
+    width: 4px;
+}
+.ai-chat-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 0, 128, 0.3);
+    border-radius: 2px;
+}
+
+.ai-msg {
+    display: flex;
+    max-width: 85%;
+}
+
+.ai-msg.ai {
+    align-self: flex-start;
+}
+
+.ai-msg.user {
+    align-self: flex-end;
+}
+
+.ai-bubble {
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    word-break: break-all;
+}
+
+.ai-msg.ai .ai-bubble {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ddd;
+    border-bottom-left-radius: 2px;
+}
+
+.ai-msg.user .ai-bubble {
+    background: rgba(255, 0, 128, 0.3);
+    color: #fff;
+    border-bottom-right-radius: 2px;
+    box-shadow: 0 0 10px rgba(255, 0, 128, 0.2);
+}
+
+.ai-chat-footer {
+    padding: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 6px;
+    background: rgba(10, 10, 20, 0.9);
+}
+
+#ai-chat-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: #fff;
+    font-size: 13px;
+    outline: none;
+}
+
+#ai-chat-input:focus {
+    border-color: rgba(255, 0, 128, 0.4);
+}
+
+#ai-send-btn {
+    padding: 0 12px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 12px;
+    margin: 0;
+}
+
+/* API Key Input Panel Overlay */
+#ai-key-panel {
+    position: absolute;
+    top: 40px;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 40px);
+    background: rgba(10, 10, 20, 0.95);
+    z-index: 10;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+#ai-key-panel h4 {
+    color: #ff0080;
+    font-size: 15px;
+    font-family: inherit;
+}
+
+#ai-key-panel p {
+    font-size: 11px;
+    color: #999;
+    line-height: 1.4;
+}
+
+#ai-api-key-input {
+    width: 90%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px;
+    color: #fff;
+    font-size: 12px;
+    text-align: center;
+    outline: none;
+}
+
+#ai-api-key-input:focus {
+    border-color: #ff0080;
+}
+
+.ai-key-actions {
+    display: flex;
+    gap: 8px;
+}
+
