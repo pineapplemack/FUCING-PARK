@@ -182,6 +182,44 @@
         <button id="music-btn"><i class="fa-solid fa-volume-xmark"></i></button>
     </div>
 
+    <!-- AI Assistant Floating Widget -->
+    <div id="ai-assistant-widget">
+        <button id="ai-toggle-btn" class="glass-panel" title="AI 乐园助手">
+            <i class="fa-solid fa-robot"></i>
+        </button>
+        <div id="ai-chat-panel" class="glass-panel hidden">
+            <div class="ai-chat-header">
+                <span><i class="fa-solid fa-robot text-pink"></i> 操逼乐园 AI 导游</span>
+                <div class="ai-header-actions">
+                    <button id="ai-settings-btn" title="API Key 设置"><i class="fa-solid fa-gear"></i></button>
+                    <button id="ai-close-btn" title="关闭">&times;</button>
+                </div>
+            </div>
+            
+            <div class="ai-chat-body" id="ai-chat-body">
+                <div class="ai-msg ai">
+                    <div class="ai-bubble">哈喽！我是操逼乐园的专属 AI 导游小助手。你可以问我关于如何操作、门票多少钱、有哪些好玩的暗示设施，或者如何打工赚钱！(全程调用 DeepSeek API)</div>
+                </div>
+            </div>
+
+            <!-- API Key Input Panel (Toggleable inside chat) -->
+            <div id="ai-key-panel" class="hidden">
+                <h4>🔑 配置 DeepSeek API Key</h4>
+                <p>我们采用纯浏览器客户端直连调用，您的 Key 仅会保存在您的浏览器本地 localStorage 中，绝不上传到任何服务器。</p>
+                <input type="password" id="ai-api-key-input" placeholder="输入 sk-..." />
+                <div class="ai-key-actions">
+                    <button id="ai-save-key-btn" class="glow-button pink small">保存 Key</button>
+                    <button id="ai-close-key-btn" class="glow-button red small">关闭</button>
+                </div>
+            </div>
+            
+            <div class="ai-chat-footer">
+                <input type="text" id="ai-chat-input" placeholder="向助手提问..." />
+                <button id="ai-send-btn" class="glow-button pink"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
     <script src="game.js"></script>
 </body>
 </html>
